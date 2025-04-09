@@ -3,7 +3,7 @@
 /// # Author
 /// Yifan Jiang, 2025
 /// alvinjiang01@hotmail.com
-/// GitHub: https://github.com/AlvinJ404/chronograph
+/// GitHub: [AlvinJ404](https://github.com/AlvinJ404/chronograph)
 
 /// This module implements a simple temporal graph structure
 /// and provides basic functionalities to add nodes and edges.
@@ -34,6 +34,14 @@ impl TemporalGraph {
             edges: HashMap::new(),
             nodes: HashSet::new(),
         }
+    }
+
+    pub fn get_nodes(&self) -> &HashSet<NodeId> {
+        &self.nodes
+    }
+
+    pub fn get_edges(&self) -> &HashMap<NodeId, Vec<(NodeId, Timestamp)>> {
+        &self.edges
     }
 
     pub fn add_node(&mut self, node_id: NodeId) {

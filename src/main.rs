@@ -3,7 +3,7 @@
 /// # Author
 /// Yifan Jiang, 2025
 /// alvinjiang01@hotmail.com
-/// GitHub: https://github.com/AlvinJ404/chronograph
+/// GitHub: [AlvinJ404](https://github.com/AlvinJ404/chronograph)
 use chronograph::sequential::TemporalGraph;
 
 fn main() {
