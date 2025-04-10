@@ -85,4 +85,29 @@ impl TemporalGraph {
             }
         }
     }
+
+    pub fn remove_node(&mut self, node_id: NodeId) -> Result<NodeId, bool> {
+        if !self.nodes.remove(&node_id) {
+            return Err(false);
+        }
+
+        self.edges.remove(&node_id);
+        
+        for neighbors in self.edges.values_mut() {
+            neighbors.retain(|(dst, _)| *dst != node_id);
+        }
+
+        Ok(node_id)
+    }
+
+    pub fn remove_edge(&mut self, src: NodeId, dst: NodeId, timestamp: Timestamp) -> Result<(NodeId, NodeId, Timestamp), bool> {
+        if let Some(neighbors) = self.edges.get_mut(&src) {
+            let before = neighbors.len();
+            neighbors.retain(|(n, ts)| !(*n == dst && *ts == timestamp));
+            if neighbors.len() < before {
+                return Ok((src, dst, timestamp));
+            }
+        }
+        Err(false)
+    }
 }
