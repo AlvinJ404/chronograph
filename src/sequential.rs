@@ -59,33 +59,6 @@ impl TemporalGraph {
         Ok(())
     }
 
-    pub fn get_neighbors_at(&self, node: NodeId, timestamp: Timestamp) -> Vec<NodeId> {
-        self.edges
-            .get(&node)
-            .map(|neighbors| {
-                neighbors
-                    .iter()
-                    .filter_map(|(neighbor, ts)| {
-                        if *ts <= timestamp {
-                            Some(*neighbor)
-                        } else {
-                            None
-                        }
-                    })
-                    .collect()
-            })
-            .unwrap_or_default()
-    }
-
-    pub fn print(&self) {
-        for (node, edges) in &self.edges {
-            println!("Node {}:", node);
-            for (dst, ts) in edges {
-                println!("  -> {} @ {}", dst, ts);
-            }
-        }
-    }
-
     pub fn remove_node(&mut self, node_id: NodeId) -> Result<NodeId, bool> {
         if !self.nodes.remove(&node_id) {
             return Err(false);
@@ -109,5 +82,36 @@ impl TemporalGraph {
             }
         }
         Err(false)
+    }
+
+    pub fn get_neighbors_at(&self, node: NodeId, timestamp: Timestamp) -> Vec<NodeId> {
+        self.edges
+            .get(&node)
+            .map(|neighbors| {
+                neighbors
+                    .iter()
+                    .filter_map(|(neighbor, ts)| {
+                        if *ts <= timestamp {
+                            Some(*neighbor)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    pub fn print(&self) {
+        for node in &self.nodes {
+            println!("Node {}:", node);
+            if let Some(edges) = self.edges.get(node) {
+                for (dst, ts) in edges {
+                    println!("  -> {} @ {}", dst, ts);
+                }
+            } else {
+                println!("  (no outgoing edges)");
+            }
+        }
     }
 }
