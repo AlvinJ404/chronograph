@@ -6,6 +6,7 @@
 /// GitHub: [AlvinJ404](https://github.com/AlvinJ404/chronograph)
 
 pub mod sequential;
+use std::time::Instant;
 
 #[cfg(test)]
 mod tests{
@@ -129,5 +130,36 @@ mod tests{
 
         eprintln!("\nTG for test_remove_edge_nonexistent:");
         tg.print();
+    }
+
+    #[test]
+    fn benchmark_add_nodes_edges_and_queries() {
+        let mut tg = TemporalGraph::new();
+        let node_count = 10_000;
+        let edge_per_node = 10;
+
+        let start_nodes = Instant::now();
+        (0..node_count).for_each(|i| tg.add_node(i));
+        let duration_nodes = start_nodes.elapsed();
+        eprintln!("\n[Benchmark] Added {} nodes in {:?}", node_count, duration_nodes);
+
+        let start_edges = Instant::now();
+        (0..node_count).for_each(|i| {
+            (0..edge_per_node).for_each(|j| {
+                let _ = tg.add_edge(i, (i + j + 1) % node_count, (j as u64) * 10);
+            });
+        });
+        let duration_edges = start_edges.elapsed();
+        eprintln!("[Benchmark] Added {} edges in {:?}", node_count * edge_per_node, duration_edges);
+
+        let start_query = Instant::now();
+        let total_neighbors: usize = (0..node_count)
+            .map(|i| tg.get_neighbors_at(i, timestamp).len())
+            .sum();
+        let duration_query = start_query.elapsed();
+        println!(
+            "[Benchmark] Queried neighbors at timestamp {} for {} nodes in {:?} (total neighbors returned: {})",
+            timestamp, node_count, duration_query, total_neighbors
+        );
     }
 }
