@@ -6,6 +6,7 @@
 /// GitHub: [AlvinJ404](https://github.com/AlvinJ404/chronograph)
 
 pub mod sequential;
+pub mod chronograph;
 use std::time::Instant;
 
 #[cfg(test)]
