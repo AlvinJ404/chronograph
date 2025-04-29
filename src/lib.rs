@@ -6,12 +6,12 @@
 /// GitHub: [AlvinJ404](https://github.com/AlvinJ404/chronograph)
 
 pub mod sequential;
-pub mod chronograph;
-use std::time::Instant;
+pub mod chrono;
 
 #[cfg(test)]
-mod tests{
+mod sequential_tests{
     use super::sequential::*;
+    use std::time::Instant;
 
     #[test]
     fn test_add_node() {
@@ -135,6 +135,7 @@ mod tests{
 
     #[test]
     fn benchmark_add_nodes_edges_and_queries() {
+        let timestamp = 50;
         let mut tg = TemporalGraph::new();
         let node_count = 10_000;
         let edge_per_node = 10;
@@ -159,7 +160,115 @@ mod tests{
             .sum();
         let duration_query = start_query.elapsed();
         println!(
-            "[Benchmark] Queried neighbors at timestamp {} for {} nodes in {:?} (total neighbors returned: {})",
+            "[Benchmark] TG Queried neighbors at timestamp {} for {} nodes in {:?} (total neighbors returned: {})",
+            timestamp, node_count, duration_query, total_neighbors
+        );
+    }
+}
+
+mod chrono_tests {
+    use super::chrono::*;
+    use std::time::Instant;
+    use rayon::prelude::*;
+
+    #[test]
+    fn test_add_node() {
+        let mut cg = ChronoGraph::new();
+        cg.add_node(1);
+        assert!(cg.get_nodes().contains(&1));
+
+        eprintln!("\nCG for test_add_node:");
+        cg.print();
+    }
+
+    #[test]
+    fn test_add_edge_success() {
+        let mut cg = ChronoGraph::new();
+        cg.add_node(1);
+        cg.add_node(2);
+        let result = cg.add_edge(1, 2, 5);
+        assert!(result.is_ok());
+        assert_eq!(cg.get_edges().get(&1).unwrap(), &vec![(2, 5)]);
+
+        eprintln!("\nCG for test_add_edge_success:");
+        cg.print();
+    }
+
+    #[test]
+    fn test_add_edge_missing_node() {
+        let mut cg = ChronoGraph::new();
+        cg.add_node(1);
+        let result = cg.add_edge(1, 2, 5);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_get_neighbors_at() {
+        let mut cg = ChronoGraph::new();
+        cg.add_node(1);
+        cg.add_node(2);
+        cg.add_node(3);
+        cg.add_edge(1, 2, 5).unwrap();
+        cg.add_edge(1, 3, 15).unwrap();
+        let neighbors_at_10 = cg.get_neighbors_at(1, 10);
+        assert_eq!(neighbors_at_10, vec![2]);
+        let neighbors_at_20 = cg.get_neighbors_at(1, 20);
+        assert_eq!(neighbors_at_20.len(), 2);
+        assert!(neighbors_at_20.contains(&2));
+        assert!(neighbors_at_20.contains(&3));
+
+        eprintln!("\nCG for test_get_neighbors_at:");
+        cg.print();
+    }
+
+    #[test]
+    fn test_get_neighbors_no_edge() {
+        let mut cg = ChronoGraph::new();
+        cg.add_node(1);
+        let neighbors = cg.get_neighbors_at(1, 10);
+        assert!(neighbors.is_empty());
+
+        eprintln!("\nCG for test_get_neighbors_no_edge:");
+        cg.print();
+    }
+
+    #[test]
+    fn test_get_neighbors_nonexistent_node() {
+        let mut cg = ChronoGraph::new();
+        let neighbors = cg.get_neighbors_at(999, 100);
+        assert!(neighbors.is_empty());
+    }
+
+    #[test]
+    fn benchmark_add_nodes_edges_and_queries() {
+        let timestamp = 50;
+        let mut cg = ChronoGraph::new();
+        let node_count = 10_000;
+        let edge_per_node = 10;
+        let timestamp = 50;
+
+        let start_nodes = Instant::now();
+        (0..node_count).for_each(|i| cg.add_node(i));
+        let duration_nodes = start_nodes.elapsed();
+        eprintln!("\n[Benchmark] Added {} nodes in {:?}", node_count, duration_nodes);
+
+        let start_edges = Instant::now();
+        (0..node_count).for_each(|i| {
+            (0..edge_per_node).for_each(|j| {
+                let _ = cg.add_edge(i, (i + j + 1) % node_count, (j as u64) * 10);
+            });
+        });
+        let duration_edges = start_edges.elapsed();
+        eprintln!("[Benchmark] Added {} edges in {:?}", node_count * edge_per_node, duration_edges);
+
+        let start_query = Instant::now();
+        let total_neighbors: usize = (0..node_count)
+            .into_par_iter() // <--- PARALLEL query
+            .map(|i| cg.get_neighbors_at(i, timestamp).len())
+            .sum();
+        let duration_query = start_query.elapsed();
+        println!(
+            "[Benchmark] CG Queried neighbors at timestamp {} for {} nodes in {:?} (total neighbors returned: {})",
             timestamp, node_count, duration_query, total_neighbors
         );
     }

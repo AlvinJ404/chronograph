@@ -41,7 +41,7 @@ impl TemporalGraph {
     }
 
     pub fn get_edges(&self) -> &HashMap<NodeId, Vec<(NodeId, Timestamp)>> {
-        &self.edgesy
+        &self.edges
     }
 
     pub fn add_node(&mut self, node_id: NodeId) {

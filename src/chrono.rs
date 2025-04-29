@@ -1,4 +1,4 @@
-/// src/chronograph.rs
+/// src/chrono.rs
 ///
 /// # Author
 /// Yifan Jiang, 2025
