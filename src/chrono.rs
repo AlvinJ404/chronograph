@@ -15,6 +15,7 @@ type Timestamp = u64;
 pub struct ChronoGraph {
     edges: HashMap<NodeId, Vec<(NodeId, Timestamp)>>,
     nodes: HashSet<NodeId>,
+    num_threads: usize,
 }
 
 impl ChronoGraph {
@@ -22,6 +23,20 @@ impl ChronoGraph {
         Self {
             edges: HashMap::new(),
             nodes: HashSet::new(),
+            num_threads: 1,
+        }
+    }
+
+    pub fn new_with_threads(num_threads: usize) -> Self {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(num_threads)
+            .build_global()
+            .expect("Failed to build thread pool");
+
+        Self {
+            edges: HashMap::new(),
+            nodes: HashSet::new(),
+            num_threads,
         }
     }
 
@@ -50,7 +65,7 @@ impl ChronoGraph {
             .get(&node)
             .map(|neighbors| {
                 neighbors
-                    .par_iter() // rayon parallel iterator
+                    .par_iter()
                     .filter_map(|(dst, ts)| {
                         if *ts <= timestamp {
                             Some(*dst)

@@ -9,7 +9,7 @@ pub mod sequential;
 pub mod chrono;
 
 #[cfg(test)]
-mod sequential_tests{
+mod sequential_unit_tests {
     use super::sequential::*;
     use std::time::Instant;
 
@@ -76,7 +76,7 @@ mod sequential_tests{
     
     #[test]
     fn test_get_neighbors_nonexistent_node() {
-        let mut tg = TemporalGraph::new();
+        let tg = TemporalGraph::new();
         let neighbors = tg.get_neighbors_at(999, 100);
         assert!(neighbors.is_empty());
     }
@@ -132,44 +132,11 @@ mod sequential_tests{
         eprintln!("\nTG for test_remove_edge_nonexistent:");
         tg.print();
     }
-
-    #[test]
-    fn benchmark_add_nodes_edges_and_queries() {
-        let timestamp = 50;
-        let mut tg = TemporalGraph::new();
-        let node_count = 10_000;
-        let edge_per_node = 10;
-
-        let start_nodes = Instant::now();
-        (0..node_count).for_each(|i| tg.add_node(i));
-        let duration_nodes = start_nodes.elapsed();
-        eprintln!("\n[Benchmark] Added {} nodes in {:?}", node_count, duration_nodes);
-
-        let start_edges = Instant::now();
-        (0..node_count).for_each(|i| {
-            (0..edge_per_node).for_each(|j| {
-                let _ = tg.add_edge(i, (i + j + 1) % node_count, (j as u64) * 10);
-            });
-        });
-        let duration_edges = start_edges.elapsed();
-        eprintln!("[Benchmark] Added {} edges in {:?}", node_count * edge_per_node, duration_edges);
-
-        let start_query = Instant::now();
-        let total_neighbors: usize = (0..node_count)
-            .map(|i| tg.get_neighbors_at(i, timestamp).len())
-            .sum();
-        let duration_query = start_query.elapsed();
-        println!(
-            "[Benchmark] TG Queried neighbors at timestamp {} for {} nodes in {:?} (total neighbors returned: {})",
-            timestamp, node_count, duration_query, total_neighbors
-        );
-    }
 }
 
-mod chrono_tests {
+mod chrono_unit_tests {
     use super::chrono::*;
     use std::time::Instant;
-    use rayon::prelude::*;
 
     #[test]
     fn test_add_node() {
@@ -234,13 +201,52 @@ mod chrono_tests {
 
     #[test]
     fn test_get_neighbors_nonexistent_node() {
-        let mut cg = ChronoGraph::new();
+        let cg = ChronoGraph::new();
         let neighbors = cg.get_neighbors_at(999, 100);
         assert!(neighbors.is_empty());
     }
+}
+
+mod benchmark_tests {
+    use super::sequential::*;
+    use super::chrono::*;
+    use rayon::prelude::*;
+    use std::time::Instant;
 
     #[test]
-    fn benchmark_add_nodes_edges_and_queries() {
+    fn benchmark_add_nodes_edges_and_queries_TG() {
+        let timestamp = 50;
+        let mut tg = TemporalGraph::new();
+        let node_count = 10_000;
+        let edge_per_node = 10;
+
+        let start_nodes = Instant::now();
+        (0..node_count).for_each(|i| tg.add_node(i));
+        let duration_nodes = start_nodes.elapsed();
+        eprintln!("\n[Benchmark] Added {} nodes in {:?}", node_count, duration_nodes);
+
+        let start_edges = Instant::now();
+        (0..node_count).for_each(|i| {
+            (0..edge_per_node).for_each(|j| {
+                let _ = tg.add_edge(i, (i + j + 1) % node_count, (j as u64) * 10);
+            });
+        });
+        let duration_edges = start_edges.elapsed();
+        eprintln!("[Benchmark] Added {} edges in {:?}", node_count * edge_per_node, duration_edges);
+
+        let start_query = Instant::now();
+        let total_neighbors: usize = (0..node_count)
+            .map(|i| tg.get_neighbors_at(i, timestamp).len())
+            .sum();
+        let duration_query = start_query.elapsed();
+        println!(
+            "[Benchmark] TG Queried neighbors at timestamp {} for {} nodes in {:?} (total neighbors returned: {})",
+            timestamp, node_count, duration_query, total_neighbors
+        );
+    }
+
+    #[test]
+    fn benchmark_add_nodes_edges_and_queries_CG() {
         let timestamp = 50;
         let mut cg = ChronoGraph::new();
         let node_count = 10_000;
