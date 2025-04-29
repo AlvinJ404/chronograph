@@ -211,71 +211,95 @@ mod benchmark_tests {
     use super::sequential::*;
     use super::chrono::*;
     use rayon::prelude::*;
+    use std::mem::size_of_val;
     use std::time::Instant;
 
+    const NODE_COUNT: usize = 10_000;
+    const EDGE_PER_NODE: usize = 10;
+    const QUERY_TIMESTAMP: u64 = 50;
+
     #[test]
-    fn benchmark_add_nodes_edges_and_queries_TG() {
-        let timestamp = 50;
+    fn benchmark_temporal_graph() {
         let mut tg = TemporalGraph::new();
-        let node_count = 10_000;
-        let edge_per_node = 10;
 
         let start_nodes = Instant::now();
-        (0..node_count).for_each(|i| tg.add_node(i));
+        (0..NODE_COUNT).for_each(|i| tg.add_node(i));
         let duration_nodes = start_nodes.elapsed();
-        eprintln!("\n[Benchmark] Added {} nodes in {:?}", node_count, duration_nodes);
+
+        let node_insert_latency = duration_nodes.as_secs_f64() / NODE_COUNT as f64;
+
+        eprintln!("[TG Benchmark] Added {} nodes in {:?} (insert latency: {:.6} sec/node)", 
+            NODE_COUNT, duration_nodes, node_insert_latency);
 
         let start_edges = Instant::now();
-        (0..node_count).for_each(|i| {
-            (0..edge_per_node).for_each(|j| {
-                let _ = tg.add_edge(i, (i + j + 1) % node_count, (j as u64) * 10);
+        (0..NODE_COUNT).for_each(|i| {
+            (0..EDGE_PER_NODE).for_each(|j| {
+                let _ = tg.add_edge(i, (i + j + 1) % NODE_COUNT, (j as u64) * 10);
             });
         });
         let duration_edges = start_edges.elapsed();
-        eprintln!("[Benchmark] Added {} edges in {:?}", node_count * edge_per_node, duration_edges);
+
+        let edge_insert_latency = duration_edges.as_secs_f64() / (NODE_COUNT * EDGE_PER_NODE) as f64;
+
+        eprintln!("[TG Benchmark] Added {} edges in {:?} (insert latency: {:.6} sec/edge)", 
+            NODE_COUNT * EDGE_PER_NODE, duration_edges, edge_insert_latency);
 
         let start_query = Instant::now();
-        let total_neighbors: usize = (0..node_count)
-            .map(|i| tg.get_neighbors_at(i, timestamp).len())
+        let total_neighbors: usize = (0..NODE_COUNT)
+            .map(|i| tg.get_neighbors_at(i, QUERY_TIMESTAMP).len())
             .sum();
         let duration_query = start_query.elapsed();
-        println!(
-            "[Benchmark] TG Queried neighbors at timestamp {} for {} nodes in {:?} (total neighbors returned: {})",
-            timestamp, node_count, duration_query, total_neighbors
-        );
+
+        let query_throughput = NODE_COUNT as f64 / duration_query.as_secs_f64();
+
+        println!("[TG Benchmark] Queried neighbors at timestamp {} for {} nodes in {:?} (total neighbors: {}, throughput: {:.2} queries/sec)", 
+            QUERY_TIMESTAMP, NODE_COUNT, duration_query, total_neighbors, query_throughput);
+
+        let memory_overhead = size_of_val(&tg);
+
+        println!("[TG Benchmark] Approximate memory overhead: {} bytes", memory_overhead);
     }
 
     #[test]
-    fn benchmark_add_nodes_edges_and_queries_CG() {
-        let timestamp = 50;
+    fn benchmark_chrono_graph() {
         let mut cg = ChronoGraph::new();
-        let node_count = 10_000;
-        let edge_per_node = 10;
-        let timestamp = 50;
 
         let start_nodes = Instant::now();
-        (0..node_count).for_each(|i| cg.add_node(i));
+        (0..NODE_COUNT).for_each(|i| cg.add_node(i));
         let duration_nodes = start_nodes.elapsed();
-        eprintln!("\n[Benchmark] Added {} nodes in {:?}", node_count, duration_nodes);
+
+        let node_insert_latency = duration_nodes.as_secs_f64() / NODE_COUNT as f64;
+
+        eprintln!("[CG Benchmark] Added {} nodes in {:?} (insert latency: {:.6} sec/node)", 
+            NODE_COUNT, duration_nodes, node_insert_latency);
 
         let start_edges = Instant::now();
-        (0..node_count).for_each(|i| {
-            (0..edge_per_node).for_each(|j| {
-                let _ = cg.add_edge(i, (i + j + 1) % node_count, (j as u64) * 10);
+        (0..NODE_COUNT).for_each(|i| {
+            (0..EDGE_PER_NODE).for_each(|j| {
+                let _ = cg.add_edge(i, (i + j + 1) % NODE_COUNT, (j as u64) * 10);
             });
         });
         let duration_edges = start_edges.elapsed();
-        eprintln!("[Benchmark] Added {} edges in {:?}", node_count * edge_per_node, duration_edges);
+
+        let edge_insert_latency = duration_edges.as_secs_f64() / (NODE_COUNT * EDGE_PER_NODE) as f64;
+
+        eprintln!("[CG Benchmark] Added {} edges in {:?} (insert latency: {:.6} sec/edge)", 
+            NODE_COUNT * EDGE_PER_NODE, duration_edges, edge_insert_latency);
 
         let start_query = Instant::now();
-        let total_neighbors: usize = (0..node_count)
-            .into_par_iter() // <--- PARALLEL query
-            .map(|i| cg.get_neighbors_at(i, timestamp).len())
+        let total_neighbors: usize = (0..NODE_COUNT)
+            .into_par_iter() 
+            .map(|i| cg.get_neighbors_at(i, QUERY_TIMESTAMP).len())
             .sum();
         let duration_query = start_query.elapsed();
-        println!(
-            "[Benchmark] CG Queried neighbors at timestamp {} for {} nodes in {:?} (total neighbors returned: {})",
-            timestamp, node_count, duration_query, total_neighbors
-        );
+
+        let query_throughput = NODE_COUNT as f64 / duration_query.as_secs_f64();
+
+        println!("[CG Benchmark] Queried neighbors at timestamp {} for {} nodes in {:?} (total neighbors: {}, throughput: {:.2} queries/sec)", 
+            QUERY_TIMESTAMP, NODE_COUNT, duration_query, total_neighbors, query_throughput);
+
+        let memory_overhead = size_of_val(&cg);
+
+        println!("[CG Benchmark] Approximate memory overhead: {} bytes", memory_overhead);
     }
 }
