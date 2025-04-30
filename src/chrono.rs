@@ -60,6 +60,36 @@ impl ChronoGraph {
         Ok(())
     }
 
+    pub fn remove_node(&mut self, node_id: NodeId) -> Result<(), String> {
+        if !self.nodes.remove(&node_id) {
+            return Err("Node does not exist.".into());
+        }
+    
+        // Remove all outgoing edges
+        self.edges.remove(&node_id);
+    
+        // Remove all incoming edges (nodes pointing to `node_id`)
+        self.edges.iter_mut().for_each(|(_, edges)| {
+            edges.retain(|(dst, _)| *dst != node_id);
+        });
+    
+        Ok(())
+    }
+    
+    pub fn remove_edge(&mut self, src: NodeId, dst: NodeId, timestamp: Timestamp) -> Result<(), String> {
+        if let Some(edge_list) = self.edges.get_mut(&src) {
+            let before_len = edge_list.len();
+            edge_list.retain(|(d, t)| !(*d == dst && *t == timestamp));
+            if edge_list.len() < before_len {
+                Ok(())
+            } else {
+                Err("Edge not found.".into())
+            }
+        } else {
+            Err("Source node has no edges.".into())
+        }
+    }
+
     pub fn get_neighbors_at(&self, node: NodeId, timestamp: Timestamp) -> Vec<NodeId> {
         self.edges
             .get(&node)
