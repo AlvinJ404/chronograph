@@ -205,6 +205,59 @@ mod chrono_unit_tests {
         let neighbors = cg.get_neighbors_at(999, 100);
         assert!(neighbors.is_empty());
     }
+
+    #[test]
+    fn test_remove_node() {
+        let mut cg = ChronoGraph::new();
+        cg.add_node(1);
+        cg.add_node(2);
+        cg.add_node(3);
+        cg.add_edge(1, 2, 5).unwrap();
+        cg.add_edge(3, 2, 10).unwrap();
+
+        assert_eq!(cg.remove_node(2), Ok(2));
+        assert!(!cg.get_nodes().contains(&2));
+        assert!(cg.get_edges().get(&1).unwrap().is_empty());
+        assert!(cg.get_edges().get(&3).unwrap().is_empty());
+
+        eprintln!("\nCG for test_remove_node:");
+        cg.print();
+    }
+
+    #[test]
+    fn test_remove_node_nonexistent() {
+        let mut cg = ChronoGraph::new();
+        assert_eq!(cg.remove_node(42), Err(false));
+    }
+
+    #[test]
+    fn test_remove_edge() {
+        let mut cg = ChronoGraph::new();
+        cg.add_node(1);
+        cg.add_node(2);
+        cg.add_edge(1, 2, 5).unwrap();
+
+        assert_eq!(cg.remove_edge(1, 2, 5), Ok((1, 2, 5)));
+        assert!(cg.get_edges().get(&1).unwrap().is_empty());
+
+        eprintln!("\nCG for test_remove_edge:");
+        cg.print();
+    }
+
+    #[test]
+    fn test_remove_edge_nonexistent() {
+        let mut cg = ChronoGraph::new();
+        cg.add_node(1);
+        cg.add_node(2);
+        cg.add_edge(1, 2, 5).unwrap();
+
+        assert_eq!(cg.remove_edge(1, 2, 99), Err(false));
+        assert_eq!(cg.remove_edge(2, 1, 5), Err(false));
+        assert_eq!(cg.remove_edge(1, 3, 5), Err(false));
+
+        eprintln!("\nCG for test_remove_edge_nonexistent:");
+        cg.print();
+    }
 }
 
 mod benchmark_tests {
