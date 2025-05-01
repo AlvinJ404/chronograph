@@ -1,6 +1,6 @@
 # ChronoGraph: A Parallel Temporal Graph Library in Rust
 
-**Author:** Yifan Jiang  
+**Author:** Yifan (Alvin) Jiang  
 **GitHub:** [AlvinJ404/chronograph](https://github.com/AlvinJ404/chronograph)
 
 ChronoGraph is a Rust library that implements both **sequential** and **parallel** temporal graph structures. It supports time-sensitive edge insertions and queries, designed for scalable graph analytics over time-evolving datasets.
